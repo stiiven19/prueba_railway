@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions, serializers, generics
 from .models import Postulacion
 from .serializers import PostulacionSerializer
+from empleos.models import Vacante
 
 # Create your views here.
 class PostulacionViewSet(viewsets.ModelViewSet):
@@ -17,14 +18,27 @@ class PostulacionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
+
         if user.rol != 'candidato':
             raise permissions.PermissionDenied("Solo los candidatos pueden postularse.")
         
         vacante_id = self.request.data.get('vacante')
+
+        try:
+            vacante_id = int(vacante_id)
+        except (ValueError, TypeError):
+            raise serializers.ValidationError("El ID de la vacante no es válido.")
+
+        # Validar existencia de la vacante
+        if not Vacante.objects.filter(id=vacante_id).exists():
+            raise serializers.ValidationError("La vacante no existe.")
+        
+        # Validar que el candidato no se haya postulado antes (Postulación duplicada)
         if Postulacion.objects.filter(candidato=user, vacante_id=vacante_id).exists():
             raise serializers.ValidationError("Ya te postulaste a esta vacante.")
         
-        serializer.save(candidato=user)
+        
+        serializer.save(candidato=user, vacante_id=vacante_id)
 
 class PostulacionesDeMisVacantesView(generics.ListAPIView):
     serializer_class = PostulacionSerializer
