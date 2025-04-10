@@ -11,5 +11,5 @@ class VacanteSerializer(serializers.ModelSerializer):
             'descripcion': {'required': True},
             'requisitos': {'required': True},
             'ubicacion': {'required': False},
-            'tipo_contrato': {'required': False}
+            'tipo_contrato': {'required': True}
         }

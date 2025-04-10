@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../api/jobconnect.api";
 
-function FormularioVacante({ onVacanteCreada }) {
+const OPCIONES_CONTRATO = [
+    "Término indefinido",
+    "Término fijo",
+    "Prestación de servicios",
+    "Prácticas",
+    "Freelance",
+];
+
+function FormularioVacante({ vacante = null, onSubmit, modo = "crear" }) {
     const [formData, setFormData] = useState({
         titulo: "",
         descripcion: "",
@@ -13,6 +21,19 @@ function FormularioVacante({ onVacanteCreada }) {
     const [mensaje, setMensaje] = useState("");
     const [error, setError] = useState("");
 
+    // Si viene vacante, lo usamos para precargar los datos
+    useEffect(() => {
+        if (vacante) {
+        setFormData({
+            titulo: vacante.titulo || "",
+            descripcion: vacante.descripcion || "",
+            requisitos: vacante.requisitos || "",
+            ubicacion: vacante.ubicacion || "",
+            tipo_contrato: vacante.tipo_contrato || "",
+        });
+        }
+    }, [vacante]);
+
     const handleChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
@@ -23,47 +44,86 @@ function FormularioVacante({ onVacanteCreada }) {
         setMensaje("");
 
         try {
-            const res = await api.post("/vacantes/", formData);
-            // Solo mostrar mensaje si fue exitoso
-            if (res.status === 201 || res.status === 200) {
-                setMensaje("Vacante publicada con éxito");
-                setFormData({
+            if (onSubmit) {
+                await onSubmit(formData);
+                setMensaje(modo === "editar" ? "Vacante actualizada" : "Vacante publicada con éxito");
+                if (modo === "crear") {
+                    setFormData({
                     titulo: "",
                     descripcion: "",
                     requisitos: "",
                     ubicacion: "",
                     tipo_contrato: "",
-                });
-
-                if (onVacanteCreada) onVacanteCreada(res.data);
+                    });
+                }
             }
         } catch (err) {
-            console.error("Error al crear vacante:", err);
-            setError("No se pudo publicar la vacante.");
+                console.error("Error en el formulario:", err);
+                setError("Hubo un error al guardar la vacante.");
         }
     };
 
     return (
-        <div>
-        <h3>Publicar nueva vacante</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+            {mensaje && <p className="text-green-600 text-center">{mensaje}</p>}
+            {error && <p className="text-red-600 text-center">{error}</p>}
 
-        {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+            <input
+                type="text"
+                name="titulo"
+                placeholder="Título"
+                value={formData.titulo}
+                onChange={handleChange}
+                className="input"
+                required
+            />
+            <textarea
+                name="descripcion"
+                placeholder="Descripción"
+                value={formData.descripcion}
+                onChange={handleChange}
+                className="textarea"
+                required
+            />
+            <textarea
+                name="requisitos"
+                placeholder="Requisitos"
+                value={formData.requisitos}
+                onChange={handleChange}
+                className="textarea"
+                required
+            />
+            <input
+                type="text"
+                name="ubicacion"
+                placeholder="Ubicación"
+                value={formData.ubicacion}
+                onChange={handleChange}
+                className="input"
+            />
 
-        <form onSubmit={handleSubmit}>
-            <input type="text" name="titulo" placeholder="Título" value={formData.titulo} onChange={handleChange} required />
-            <br />
-            <textarea name="descripcion" placeholder="Descripción" value={formData.descripcion} onChange={handleChange} required />
-            <br />
-            <textarea name="requisitos" placeholder="Requisitos" value={formData.requisitos} onChange={handleChange} required />
-            <br />
-            <input type="text" name="ubicacion" placeholder="Ubicación" value={formData.ubicacion} onChange={handleChange} />
-            <br />
-            <input type="text" name="tipo_contrato" placeholder="Tipo de contrato" value={formData.tipo_contrato} onChange={handleChange} />
-            <br />
-            <button type="submit">Publicar vacante</button>
+            <select
+                name="tipo_contrato"
+                value={formData.tipo_contrato}
+                onChange={handleChange}
+                className="input"
+                required
+            >
+                <option value="">Seleccionar tipo de contrato</option>
+                {OPCIONES_CONTRATO.map((op) => (
+                <option key={op} value={op}>
+                    {op}
+                </option>
+                ))}
+            </select>
+
+            <button
+                type="submit"
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded"
+            >
+                {modo === "editar" ? "Guardar Cambios" : "Publicar Vacante"}
+            </button>
         </form>
-        </div>
     );
 }
 
