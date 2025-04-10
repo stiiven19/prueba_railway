@@ -12,7 +12,7 @@ function PostuladosPorVacante({ vacanteId }) {
     const fetchPostulados = async () => {
         try {
         const res = await api.get(`/postulaciones-por-vacante/?vacante=${vacanteId}`);
-        setPostulados(res.data);
+        setPostulados(res.data.results || []);
         } catch (err) {
         console.error("Error al obtener postulados", err);
         }

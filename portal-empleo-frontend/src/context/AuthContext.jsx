@@ -9,10 +9,13 @@ export function AuthProvider({ children }) {
 
     const cargarUsuario = async () => {
         try {
-        const res = await api.get("/perfil-usuario/");
-        setUsuario(res.data.usuario);
+            const res = await api.get("/perfil-usuario/");
+            setUsuario(res.data.usuario);
         } catch (error) {
-        setUsuario(null);
+            console.warn("No se pudo cargar el perfil del usuario (token expirado o inválido)");
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+            setUsuario(null);
         }finally {
             setLoading(false); // 👈 importante: termina carga
         }

@@ -13,7 +13,7 @@ class PostulacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Postulacion
         fields = '__all__'
-        read_only_fields = ['candidato', 'fecha_postulacion']
+        read_only_fields = ['candidato', 'vacante', 'fecha_postulacion']
         
     def get_perfil_candidato(self, obj):
         perfil = getattr(obj.candidato, 'perfil_candidato', None)
