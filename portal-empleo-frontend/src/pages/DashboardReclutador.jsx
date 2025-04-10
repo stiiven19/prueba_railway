@@ -36,13 +36,6 @@ function DashboardReclutador() {
                 expandida={expandida}
                 setExpandida={setExpandida}
             />
-
-            {/* Mostrar postulados si hay vacante expandida */}
-            {expandida && (
-                <div style={{ marginTop: "1rem", paddingLeft: "1rem", borderLeft: "2px solid #ccc" }}>
-                    <PostuladosPorVacante vacanteId={expandida} />
-                </div>
-            )}
         </div>
     );
 }

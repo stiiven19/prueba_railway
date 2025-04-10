@@ -44,6 +44,7 @@ function DashboardCandidato() {
     }, []);
 
     const postularse = async (id) => {
+        
         try {
             await api.post("/postulaciones/", { vacante: id });
             setMensaje("Te has postulado correctamente.");
