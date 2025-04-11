@@ -4,6 +4,7 @@ psycopg2-binary
 python-dotenv
 djangorestframework
 djangorestframework-simplejwt
+django-filter
 drf-yasg
 django-cors-headers
 PyJWT
