@@ -1,1 +1,2 @@
-"web: gunicorn jobconnect_api.wsgi:application" 
+processes:
+  web: gunicorn jobconnect_api.wsgi:application
