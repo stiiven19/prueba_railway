@@ -44,7 +44,8 @@ function EditarVacante() {
             
             // Mostrar toast y esperar un momento antes de navegar
             toast.success("Vacante actualizada exitosamente", {
-                onClose: () => navigate("/reclutador")
+                onClose: () => navigate("/reclutador"),
+                autoClose: 1000
             });
         } catch (err) {
             console.error("Error al actualizar vacante:", err);

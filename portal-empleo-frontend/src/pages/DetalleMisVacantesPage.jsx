@@ -3,13 +3,14 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FaEye, FaCheck, FaTimes, FaSpinner, FaTrash, FaEdit, FaArrowLeft } from 'react-icons/fa';
 import { Tooltip } from 'react-tooltip';
 import api from '../api/jobconnect.api';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function DetalleVacantePage (){
     const navigate = useNavigate();
     const { id } = useParams(); // ID de la vacante
     const [vacante, setVacante] = useState(null);
-    const [postulados, setPostulados] = useState([]);
+    const [postulantes, setPostulantes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [paginaActual, setPaginaActual] = useState(1);
     const [totalPaginas, setTotalPaginas] = useState(0);
@@ -82,7 +83,9 @@ function DetalleVacantePage (){
                     })
                 );
 
-                setPostulados(postulantesConDetalles);
+                setPostulantes(postulantesConDetalles);
+                setTotalPaginas(Math.ceil(datosPostulantes.length / 10)); // Asumiendo 10 items por página
+
                 setLoading(false);
             } catch (error) {
                 console.error('Error completo:', error);
@@ -103,30 +106,47 @@ function DetalleVacantePage (){
 
     const cambiarEstado = async (postulacionId, nuevoEstado) => {
         try {
-            await api.patch(`/postulaciones/${postulacionId}/`, { estado: nuevoEstado });
+            console.log('Intentando cambiar estado:', { 
+                postulacionId, 
+                nuevoEstado,
+                currentPostulantes: postulantes.map(p => ({id: p.id, estado: p.estado}))
+            });
+            
+            const response = await api.patch(`/postulaciones/${postulacionId}/`, { estado: nuevoEstado });
+            console.log('Respuesta del servidor:', response);
             
             // Actualizar estado localmente
-            const postulantesActualizados = postulados.map(p => 
+            const postulantesActualizados = postulantes.map(p => 
                 p.id === postulacionId ? { ...p, estado: nuevoEstado } : p
             );
-            setPostulados(postulantesActualizados);
+            
+            console.log('Postulantes después de actualizar:', postulantesActualizados);
+            setPostulantes(postulantesActualizados);
 
+            // Asegurarse de que el toast se muestre
+            console.log('Preparando toast');
             toast.success(`Estado actualizado a ${nuevoEstado}`, {
                 position: "bottom-right",
                 autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true
+                onOpen: () => console.log('Toast abierto'),
+                onClose: () => console.log('Toast cerrado')
             });
+
+            console.log('Estado cambiado exitosamente');
         } catch (error) {
+            console.error("Error al actualizar el estado:", error);
+            
+            // Más detalles de error
+            if (error.response) {
+                console.error('Detalles de error de respuesta:', {
+                    status: error.response.status,
+                    data: error.response.data
+                });
+            }
+
             toast.error('Error al actualizar el estado', {
                 position: "bottom-right",
-                autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true
+                autoClose: 3000
             });
         }
     };
@@ -187,10 +207,29 @@ function DetalleVacantePage (){
             'seleccionado': 'text-green-500'
         };
 
+        const handleEstadoClick = (estado) => {
+            console.log('Estado clickeado:', { 
+                postulado: postulado.id, 
+                estado,
+                currentState: postulado.estado 
+            });
+            
+            // Verificar si el estado es diferente antes de llamar a cambiarEstado
+            if (postulado.estado !== estado) {
+                cambiarEstado(postulado.id, estado);
+            } else {
+                console.log('Estado ya es igual, no se cambia');
+                toast.info(`El estado ya es ${estado}`, {
+                    position: "bottom-right",
+                    autoClose: 2000
+                });
+            }
+        };
+
         return (
             <div className="flex items-center space-x-2">
                 <button 
-                    onClick={() => cambiarEstado(postulado.id, 'en revision')}
+                    onClick={() => handleEstadoClick('en revision')}
                     data-tooltip-id={`tooltip-revision-${postulado.id}`}
                     data-tooltip-content="En Revisión"
                     className={`p-2 rounded-full hover:bg-yellow-100 ${estadosPermitidos['en revision']} 
@@ -201,7 +240,7 @@ function DetalleVacantePage (){
                 </button>
 
                 <button 
-                    onClick={() => cambiarEstado(postulado.id, 'descartado')}
+                    onClick={() => handleEstadoClick('descartado')}
                     data-tooltip-id={`tooltip-descartado-${postulado.id}`}
                     data-tooltip-content="Descartado"
                     className={`p-2 rounded-full hover:bg-red-100 ${estadosPermitidos['descartado']} 
@@ -212,7 +251,7 @@ function DetalleVacantePage (){
                 </button>
 
                 <button 
-                    onClick={() => cambiarEstado(postulado.id, 'seleccionado')}
+                    onClick={() => handleEstadoClick('seleccionado')}
                     data-tooltip-id={`tooltip-seleccionado-${postulado.id}`}
                     data-tooltip-content="Seleccionado"
                     className={`p-2 rounded-full hover:bg-green-100 ${estadosPermitidos['seleccionado']} 
@@ -325,10 +364,6 @@ function DetalleVacantePage (){
                         <p style={{ fontWeight: "bold", color: "#4a5568", marginBottom: "0rem" }}>Título:</p>
                         <p style={{ color: "#2d3748" }}>{vacante.titulo}</p>
                     </div>
-                    <div>
-                        <p style={{ fontWeight: "bold", color: "#4a5568", marginBottom: "0rem" }}>Empresa:</p>
-                        <p style={{ color: "#2d3748" }}>{vacante.empresa || 'No especificada'}</p>
-                    </div>
                     <div style={{ gridColumn: "1 / -1" }}>
                         <p style={{ fontWeight: "bold", color: "#4a5568", marginBottom: "0rem" }}>Descripción:</p>
                         <p style={{ color: "#2d3748" }}>{vacante.descripcion}</p>
@@ -356,7 +391,7 @@ function DetalleVacantePage (){
                         marginBottom: "1.5rem" 
                     }}>Postulantes</h3>
 
-                    {postulados.length === 0 ? (
+                    {postulantes.length === 0 ? (
                         <div style={{ 
                             textAlign: "center", 
                             color: "#718096", 
@@ -383,7 +418,7 @@ function DetalleVacantePage (){
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {postulados.map(postulado => (
+                                    {postulantes.map(postulado => (
                                         <tr key={postulado.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
                                             <td style={tableCellStyle}>
                                                 {postulado.candidato?.first_name || 'Sin'} {postulado.candidato?.last_name || 'Nombre'}
@@ -417,7 +452,7 @@ function DetalleVacantePage (){
                                             </td>
                                             <td style={tableCellStyle}>
                                                 <button
-                                                    onClick={() => navigate(`/ver-postulantes/perfil/${vacante.id}`)}
+                                                    onClick={() => navigate(`/ver-postulantes/${vacante.id}/${postulado.id}`)}
                                                     className="transform hover:scale-105 active:scale-95 transition-all duration-200"
                                                     style={{
                                                         backgroundColor: "transparent",
@@ -483,6 +518,18 @@ function DetalleVacantePage (){
                     )}
                 </div>
             </div>
+            <ToastContainer 
+                position="bottom-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+            />
         </div>
     );
 }

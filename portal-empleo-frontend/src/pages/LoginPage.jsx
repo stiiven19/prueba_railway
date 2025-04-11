@@ -34,16 +34,26 @@ function LoginPage() {
             const userRes = await api.get("/perfil-usuario/");
             const rol = userRes.data.usuario.rol;
 
-            toast.success('¡Inicio de sesión exitoso!', {
-                position: "bottom-right",
-                autoClose: 2000,
-                hideProgressBar: true,
-            });
-
             if (rol === "candidato") {
                 navigate("/candidato");
+                // Delay toast to ensure navigation completes
+                setTimeout(() => {
+                    toast.success('¡Inicio de sesión exitoso!', {
+                        position: "bottom-right",
+                        autoClose: 2000,
+                        hideProgressBar: true,
+                    });
+                }, 100);
             } else if (rol === "reclutador") {
                 navigate("/reclutador");
+                // Delay toast to ensure navigation completes
+                setTimeout(() => {
+                    toast.success('¡Inicio de sesión exitoso!', {
+                        position: "bottom-right",
+                        autoClose: 2000,
+                        hideProgressBar: true,
+                    });
+                }, 100);
             } else {
                 setError("Rol no válido.");
                 toast.error("Rol de usuario no válido", {

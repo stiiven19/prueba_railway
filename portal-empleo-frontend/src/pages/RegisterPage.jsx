@@ -10,6 +10,7 @@ function RegisterPage() {
         username: "",
         email: "",
         password: "",
+        confirmPassword: "",
         rol: "candidato",
         first_name: "",
         last_name: "",
@@ -22,6 +23,7 @@ function RegisterPage() {
         cargo: "",
         sitio_web: ""
     });
+    const [error, setError] = useState("");
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -34,6 +36,48 @@ function RegisterPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError("");
+
+        // Validaciones básicas antes del envío
+        if (!formData.username.trim()) {
+            toast.error("El nombre de usuario es obligatorio", {
+                position: "bottom-right",
+                autoClose: 3000,
+                hideProgressBar: true
+            });
+            setLoading(false);
+            return;
+        }
+
+        if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
+            toast.error("Por favor, ingrese un correo electrónico válido", {
+                position: "bottom-right",
+                autoClose: 3000,
+                hideProgressBar: true
+            });
+            setLoading(false);
+            return;
+        }
+
+        if (formData.password.length < 8) {
+            toast.error("La contraseña debe tener al menos 8 caracteres", {
+                position: "bottom-right",
+                autoClose: 3000,
+                hideProgressBar: true
+            });
+            setLoading(false);
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            toast.error("Las contraseñas no coinciden", {
+                position: "bottom-right",
+                autoClose: 3000,
+                hideProgressBar: true
+            });
+            setLoading(false);
+            return;
+        }
 
         const payload = {
             username: formData.username,
@@ -65,33 +109,87 @@ function RegisterPage() {
             const response = await api.post("/registro/", payload);
             
             if (response.status === 201) {
-                toast.success("¡Registro exitoso! Por favor inicia sesión.", {
+                toast.success('Registro exitoso', {
                     position: "bottom-right",
                     autoClose: 2000,
                     hideProgressBar: true,
                 });
-                navigate("/login");
+
+                // Pequeño retraso antes de navegar
+                setTimeout(() => {
+                    navigate("/login");
+                }, 2000);
             }
         } catch (error) {
-            console.error("Error en el registro:", error);
-            let errorMessage = "Error al registrar. Por favor, intenta de nuevo.";
+            // Log full error details for debugging
+            console.error("Error completo en el registro:", error);
+            console.log("Error config:", error.config);
+            console.log("Error response:", error.response);
             
-            if (error.response?.data) {
+            let errorMessage = "Error al registrar. Por favor, intenta de nuevo.";
+            let errorDetails = null;
+            
+            if (error.response) {
+                // The request was made and the server responded with a status code
                 const errors = error.response.data;
-                if (errors.username) {
-                    errorMessage = "El nombre de usuario ya está en uso.";
-                } else if (errors.email) {
-                    errorMessage = "El correo electrónico ya está registrado.";
-                } else if (errors.password) {
-                    errorMessage = "La contraseña no cumple con los requisitos.";
+                console.log('Errores del servidor:', errors);
+
+                // Manejar errores específicos del servidor con más detalle
+                if (typeof errors === 'object') {
+                    // Priorizar errores de username
+                    if (errors.username) {
+                        errorMessage = Array.isArray(errors.username) 
+                            ? errors.username[0] 
+                            : "El nombre de usuario ya está en uso.";
+                        errorDetails = {
+                            field: 'username',
+                            message: errorMessage
+                        };
+                    } 
+                    // Si no hay error de username, revisar email
+                    else if (errors.email) {
+                        errorMessage = Array.isArray(errors.email)
+                            ? errors.email[0]
+                            : "El correo electrónico ya está registrado.";
+                        errorDetails = {
+                            field: 'email',
+                            message: errorMessage
+                        };
+                    } 
+                    // Otros tipos de errores
+                    else if (errors.password) {
+                        errorMessage = Array.isArray(errors.password)
+                            ? errors.password[0]
+                            : "La contraseña no cumple con los requisitos.";
+                    } else if (errors.non_field_errors) {
+                        errorMessage = Array.isArray(errors.non_field_errors)
+                            ? errors.non_field_errors[0]
+                            : "Error en el registro. Verifica tus datos.";
+                    }
+                } else if (typeof errors === 'string') {
+                    // Si el error es un string plano
+                    errorMessage = errors;
                 }
+            } else if (error.request) {
+                // The request was made but no response was received
+                errorMessage = "No se recibió respuesta del servidor. Verifica tu conexión.";
             }
             
+            // Mostrar toast de error con mensaje detallado
             toast.error(errorMessage, {
                 position: "bottom-right",
-                autoClose: 3000,
-                hideProgressBar: true,
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true
             });
+
+            // Si hay detalles específicos de error, hacer algo adicional
+            if (errorDetails) {
+                // Opcional: Puedes agregar lógica adicional aquí, como resaltar el campo
+                console.log(`Error en campo: ${errorDetails.field}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -170,6 +268,21 @@ function RegisterPage() {
                         name="password"
                         placeholder="Contraseña"
                         value={formData.password}
+                        onChange={handleChange}
+                        required
+                        style={{ 
+                            padding: "0.75rem",
+                            fontSize: "1rem",
+                            border: "1px solid #dfe3e8",
+                            borderRadius: "4px"
+                        }}
+                    />
+
+                    <input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Confirmar contraseña"
+                        value={formData.confirmPassword}
                         onChange={handleChange}
                         required
                         style={{ 

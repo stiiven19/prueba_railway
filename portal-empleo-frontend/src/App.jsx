@@ -49,7 +49,7 @@ function App() {
             </RutaProtegida>} />
 
           {/* Ruta protegida para perfil candidato */}
-          <Route path="/ver-postulantes/perfil/:id" element={
+          <Route path="/ver-postulantes/:idvacante/:idpostulante" element={
               <RutaProtegida rolRequerido="reclutador">
                 <PerfilCandidatoPage />
               </RutaProtegida>} />
@@ -61,7 +61,18 @@ function App() {
             </RutaProtegida>} />
           
         </Routes>
-        <ToastContainer position="top-right" />
+        <ToastContainer 
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </div>
     </BrowserRouter>
   );

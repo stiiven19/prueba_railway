@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import { FaSpinner, FaTimes, FaCheck, FaArrowLeft, FaEye } from 'react-icons/fa';
 import { Tooltip } from 'react-tooltip';
 import api from "../api/jobconnect.api";
 
 function PerfilCandidatoPage() {
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { idvacante, idpostulante } = useParams();
     const [postulaciones, setPostulaciones] = useState([]);
+    const [vacante, setVacante] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -32,57 +34,73 @@ function PerfilCandidatoPage() {
 
     const fetchPostulaciones = async () => {
         try {
-            const vacanteRes = await api.get(`/vacantes/${id}/`);
-            console.log('Datos de la vacante:', vacanteRes.data);
+            // Fetch the vacancy details first
+            console.log('Buscando detalles de la vacante...', idvacante);
+            const vacanteRes = await api.get(`/vacantes/${idvacante}/`);
+            console.log('Detalles de la vacante:', vacanteRes.data);
+            setVacante(vacanteRes.data);
 
-            const rutasBusqueda = [
-                `/postulaciones-por-vacante/?vacante=${id}`,
-                `/postulaciones-recibidas/?vacante=${id}`,
-                `/mis-postulaciones/?vacante=${id}`
-            ];
-
-            let postulantesRes = null;
-            for (const ruta of rutasBusqueda) {
-                try {
-                    postulantesRes = await api.get(ruta);
-                    break;
-                } catch (error) {
-                    console.log(`Error en ruta ${ruta}:`, error);
-                }
-            }
-
-            if (!postulantesRes) {
-                throw new Error('No se pudieron obtener los postulantes');
-            }
-
-            const datosPostulantes = postulantesRes.data.results || postulantesRes.data;
+            // Fetch the specific postulant's details
+            console.log('Buscando detalles del postulante...', idpostulante);
+            const postulacionRes = await api.get(`/postulaciones/${idpostulante}/`);
+            console.log('Detalles del postulante:', postulacionRes.data);
             
-            // Obtener detalles de cada postulación
-            const detallesPostulaciones = await Promise.all(
-                datosPostulantes.map(async (postulante) => {
-                    const detallePostulacion = await api.get(`/postulaciones/${postulante.id}/`);
-                    return detallePostulacion.data;
-                })
-            );
+            // Verificar que el postulante pertenezca a la vacante especificada
+            const postulacionVacanteId = postulacionRes.data.vacante?.id || postulacionRes.data.vacante;
+            const rutaVacanteId = parseInt(idvacante);
 
-            setPostulaciones(detallesPostulaciones);
-            console.log('Postulaciones:', detallesPostulaciones);
+            console.log('ID de vacante en la postulación:', postulacionVacanteId);
+            console.log('ID de vacante de la ruta:', rutaVacanteId);
+            console.log('Tipo de ID de vacante en la postulación:', typeof postulacionVacanteId);
+            console.log('Tipo de ID de vacante de la ruta:', typeof rutaVacanteId);
+
+            // Comparación más flexible
+            if (postulacionVacanteId != rutaVacanteId) {
+                console.error('Discrepancia en la vacante del postulante');
+                console.error('Datos completos de la postulación:', postulacionRes.data);
+                
+                toast.error(`El postulante no pertenece a la vacante. Vacante en postulación: ${postulacionVacanteId}, Vacante en ruta: ${rutaVacanteId}`, {
+                    position: "bottom-right",
+                    autoClose: 5000
+                });
+                
+                // En lugar de navegar, mostrar un mensaje de error
+                setError(new Error('Postulante no corresponde a la vacante'));
+                return;
+            }
+
+            // Establecer los datos del postulante
+            setPostulaciones([postulacionRes.data]);
 
         } catch (err) {
-            console.error("Error al cargar postulaciones", err);
+            console.error("Error completo al cargar postulación:", err);
+            
+            // Registrar detalles específicos del error
+            if (err.response) {
+                console.error("Datos de respuesta de error:", err.response.data);
+                console.error("Estado de respuesta de error:", err.response.status);
+                
+                // Mensaje de error más descriptivo
+                toast.error(`No se pudieron cargar los datos del candidato: ${err.response.status}`, {
+                    position: "bottom-right",
+                    autoClose: 3000
+                });
+            }
+
+            // Establecer el estado de error
             setError(err);
-            toast.error('Error al cargar los datos de los candidatos', {
-                position: "bottom-right",
-                autoClose: 3000
-            });
         } finally {
+            // Asegurar que la carga se detenga
             setLoading(false);
         }
     };
 
     const cambiarEstado = async (postulacionId, nuevoEstado) => {
         try {
-            await api.patch(`/postulaciones/${postulacionId}/`, { estado: nuevoEstado });
+            console.log('Intentando cambiar estado:', { postulacionId, nuevoEstado });
+            
+            const response = await api.patch(`/postulaciones/${postulacionId}/`, { estado: nuevoEstado });
+            console.log('Respuesta del servidor:', response);
             
             const postulacionesActualizadas = postulaciones.map(postulacion => 
                 postulacion.id === postulacionId 
@@ -92,12 +110,27 @@ function PerfilCandidatoPage() {
             
             setPostulaciones(postulacionesActualizadas);
 
+            // Asegurarse de que el toast se muestre
+            console.log('Mostrando toast');
             toast.success(`Estado cambiado a ${nuevoEstado}`, {
                 position: "bottom-right",
-                autoClose: 3000
+                autoClose: 3000,
+                onOpen: () => console.log('Toast abierto'),
+                onClose: () => console.log('Toast cerrado')
             });
+
+            console.log('Estado cambiado exitosamente');
         } catch (err) {
             console.error("Error al cambiar estado", err);
+            
+            // Más detalles de error
+            if (err.response) {
+                console.error('Detalles de error de respuesta:', {
+                    status: err.response.status,
+                    data: err.response.data
+                });
+            }
+
             toast.error('Error al cambiar estado', {
                 position: "bottom-right",
                 autoClose: 3000
@@ -153,9 +186,17 @@ function PerfilCandidatoPage() {
         );
     };
 
+    const formatearFecha = (fecha) => {
+        return new Date(fecha).toLocaleDateString('es-CO', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
     useEffect(() => {
         fetchPostulaciones();
-    }, [id]);
+    }, [idvacante, idpostulante]);
 
     if (loading) return <p className="p-4">Cargando postulaciones...</p>;
     if (error) return <p className="p-4">Error al cargar los datos</p>;
@@ -209,7 +250,7 @@ function PerfilCandidatoPage() {
                 </div>
 
                 <h2 className="text-2xl font-bold mb-4">
-                    Postulantes de la Vacante
+                    Perfil del Candidato
                 </h2>
 
                 {postulaciones.map(postulacion => {
@@ -231,17 +272,11 @@ function PerfilCandidatoPage() {
                                 </tr>
                                 <tr style={tableRowStyle}>
                                     <td style={tableLabelStyle}>Vacante</td>
-                                    <td style={tableValueStyle}>{postulacion.vacante.titulo}</td>
+                                    <td style={tableValueStyle}>{vacante.titulo}</td>
                                 </tr>
                                 <tr style={tableRowStyle}>
                                     <td style={tableLabelStyle}>Fecha Postulación</td>
-                                    <td style={tableValueStyle}>
-                                        {new Date(postulacion.fecha_postulacion).toLocaleDateString('es-CO', {
-                                            day: 'numeric',
-                                            month: 'long',
-                                            year: 'numeric'
-                                        })}
-                                    </td>
+                                    <td style={tableValueStyle}>{formatearFecha(postulacion.fecha_postulacion)}</td>
                                 </tr>
                                 <tr style={tableRowStyle}>
                                     <td style={tableLabelStyle}>Teléfono</td>
@@ -297,6 +332,7 @@ function PerfilCandidatoPage() {
                     );
                 })}
             </div>
+            <ToastContainer />
         </div>
     );
 }
