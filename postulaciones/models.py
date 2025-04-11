@@ -22,4 +22,4 @@ class Postulacion(models.Model):
         unique_together = ['candidato', 'vacante']
 
     def __str__(self):
-        return f"{self.candidato.username} → {self.vacante.titulo}"
+        return f"{self.candidato.username} - {self.vacante.titulo}"

@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, serializers, generics, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
@@ -29,7 +30,7 @@ class PostulacionViewSet(viewsets.ModelViewSet):
 
         # Validar que el usuario sea candidato
         if user.rol != 'candidato':
-            raise permissions.PermissionDenied("Solo los candidatos pueden postularse.")
+            raise PermissionDenied("Solo los candidatos pueden postularse.")
         
         vacante_id = self.request.data.get('vacante')
         
@@ -44,7 +45,7 @@ class PostulacionViewSet(viewsets.ModelViewSet):
         
         # Validar que el candidato no se haya postulado antes (Postulación duplicada)
         if Postulacion.objects.filter(candidato=user, vacante_id=vacante_id).exists():
-            raise serializers.ValidationError({"non_field_errors": ["Ya te postulaste a esta vacante."]})
+            raise serializers.ValidationError({"mensaje": ["Ya te postulaste a esta vacante."]})
         
         serializer.save(candidato=user, vacante_id=vacante_id)
     
@@ -63,7 +64,7 @@ class PostulacionViewSet(viewsets.ModelViewSet):
         user = request.user
         
         if user != postulacion.vacante.reclutador:
-            raise permissions.PermissionDenied("Solo el reclutador puede actualizar esta postulación.")
+            raise PermissionDenied("Solo el reclutador puede actualizar esta postulación.")
         
         return super().update(request, *args, **kwargs)
 

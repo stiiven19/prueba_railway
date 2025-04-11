@@ -160,6 +160,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://tu-dominio.com",
 ]
 
+SWAGGER_USE_COMPAT_RENDERERS = False
 
 
 

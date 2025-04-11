@@ -11,7 +11,11 @@ function RutaProtegida({ children, rolRequerido = null }) {
         return <Navigate to="/login" />;
     }
 
-    if (rolRequerido && usuario.rol !== rolRequerido) {
+    // Verificar si el rol está permitido
+    const rolesPermitidos = Array.isArray(rolRequerido) ? rolRequerido : [rolRequerido];
+    const tieneRolPermitido = rolRequerido === null || rolesPermitidos.includes(usuario.rol);
+
+    if (!tieneRolPermitido) {
         return <Navigate to="/" />;
     }
 

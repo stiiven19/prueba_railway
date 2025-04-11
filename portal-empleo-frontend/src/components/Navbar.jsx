@@ -21,7 +21,7 @@ function Navbar() {
                 {!usuario && (
                     <>
                         <Link to="/login" className="hover:text-blue-600 transition">
-                            Login
+                            Iniciar Sesion
                         </Link>
                         <Link to="/registro" className="hover:text-blue-600 transition">
                             Registro
@@ -34,13 +34,12 @@ function Navbar() {
                         <Link to="/reclutador" className="hover:text-blue-600 transition">
                             Panel Reclutador
                         </Link>
-                        <Link to="/reclutador/publicar" className="hover:text-blue-300">Publicar Vacante</Link>
-                        <Link to="/reclutador/vacantes" className="hover:text-blue-300">Mis Vacantes</Link>
+                        
                     </>
                 )}
 
                 {usuario?.rol === "candidato" && (
-                    <Link to="/candidato" className="text-gray-700 hover:text-blue-600 transition">
+                    <Link to="/candidato" className=" hover:text-blue-600 transition">
                         Panel Candidato
                     </Link>
                 )}

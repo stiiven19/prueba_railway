@@ -1,58 +1,196 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/jobconnect.api";
-import FormularioVacante from "../components/FormularioVacante";
 
-function EditarVacantePage() {
+function EditarVacante() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [vacante, setVacante] = useState(null);
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(true);
-
-    const getVacante = async () => {
-        try {
-            const res = await api.get(`/vacantes/${id}/`);
-            setVacante(res.data);
-        } catch (err) {
-            console.error("Error al cargar vacante", err);
-            setError("No se pudo cargar la vacante.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const actualizarVacante = async (data) => {
-        try {
-            await api.put(`/vacantes/${id}/`, data);
-            alert("Vacante actualizada correctamente.");
-            navigate(`/reclutador/vacante/${id}`);
-        } catch (err) {
-            console.error("Error al actualizar", err);
-            setError("Error al guardar los cambios.");
-        }
-    };
+    const [formData, setFormData] = useState({
+        titulo: "",
+        descripcion: "",
+        requisitos: "",
+        ubicacion: "",
+        tipo_contrato: ""
+    });
 
     useEffect(() => {
-        getVacante();
-    }, [id]);
+        const cargarVacante = async () => {
+            try {
+                const res = await api.get(`/vacantes/${id}/`);
+                setFormData(res.data);
+            } catch (err) {
+                console.error("Error al cargar vacante:", err);
+                toast.error("No se pudo cargar la vacante");
+                navigate("/reclutador");
+            }
+        };
 
-    if (loading) return <p className="p-4">Cargando vacante...</p>;
+        cargarVacante();
+    }, [id, navigate]);
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.put(`/vacantes/${id}/`, formData);
+            
+            // Mostrar toast y esperar un momento antes de navegar
+            toast.success("Vacante actualizada exitosamente", {
+                onClose: () => navigate("/reclutador")
+            });
+        } catch (err) {
+            console.error("Error al actualizar vacante:", err);
+            toast.error("No se pudo actualizar la vacante");
+        }
+    };
 
     return (
-        <div className="min-h-screen px-6 py-10 bg-gradient-to-br from-yellow-50 to-blue-50">
-            <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow">
-                <h2 className="text-2xl font-bold mb-6">Editar Vacante</h2>
-                {error && <p className="text-red-500 mb-4">{error}</p>}
+        <div style={{
+            maxWidth: "600px",
+            margin: "2rem auto",
+            padding: "2rem",
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+        }}>
+            <h2 style={{
+                textAlign: "center",
+                marginBottom: "1.5rem",
+                color: "#2c3e50"
+            }}>Editar Vacante</h2>
 
-                <FormularioVacante
-                    modo="editar"
-                    vacante={vacante}
-                    onSubmit={actualizarVacante}
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <input
+                    type="text"
+                    name="titulo"
+                    placeholder="Título de la vacante"
+                    value={formData.titulo}
+                    onChange={handleChange}
+                    required
+                    style={{
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        border: "1px solid #dfe3e8",
+                        borderRadius: "4px",
+                        outline: "none"
+                    }}
                 />
-            </div>
+
+                <textarea
+                    name="descripcion"
+                    placeholder="Descripción de la vacante"
+                    value={formData.descripcion}
+                    onChange={handleChange}
+                    required
+                    style={{
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        border: "1px solid #dfe3e8",
+                        borderRadius: "4px",
+                        minHeight: "100px",
+                        resize: "vertical",
+                        outline: "none"
+                    }}
+                />
+
+                <textarea
+                    name="requisitos"
+                    placeholder="Requisitos del cargo"
+                    value={formData.requisitos}
+                    onChange={handleChange}
+                    required
+                    style={{
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        border: "1px solid #dfe3e8",
+                        borderRadius: "4px",
+                        minHeight: "100px",
+                        resize: "vertical",
+                        outline: "none"
+                    }}
+                />
+
+                <input
+                    type="text"
+                    name="ubicacion"
+                    placeholder="Ubicación"
+                    value={formData.ubicacion}
+                    onChange={handleChange}
+                    required
+                    style={{
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        border: "1px solid #dfe3e8",
+                        borderRadius: "4px",
+                        outline: "none"
+                    }}
+                />
+
+                <select
+                    name="tipo_contrato"
+                    value={formData.tipo_contrato}
+                    onChange={handleChange}
+                    required
+                    style={{
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        border: "1px solid #dfe3e8",
+                        borderRadius: "4px",
+                        outline: "none"
+                    }}
+                >
+                    <option value="">Seleccione tipo de contrato</option>
+                    <option value="Tiempo completo">Tiempo completo</option>
+                    <option value="Medio tiempo">Medio tiempo</option>
+                    <option value="Por proyecto">Por proyecto</option>
+                    <option value="Freelance">Freelance</option>
+                </select>
+
+                <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between",
+                    marginTop: "1rem" 
+                }}>
+                    <button
+                        type="button"
+                        onClick={() => navigate("/reclutador")}
+                        style={{
+                            padding: "0.75rem 1.5rem",
+                            backgroundColor: "#6c757d",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer"
+                        }}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        style={{
+                            padding: "0.75rem 1.5rem",
+                            backgroundColor: "#0066cc",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer"
+                        }}
+                    >
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+            <ToastContainer position="bottom-right" />
         </div>
     );
 }
 
-export default EditarVacantePage;
+export default EditarVacante;

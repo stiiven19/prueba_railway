@@ -1,84 +1,67 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardCandidato from "./pages/DashboardCandidato";
 import DashboardReclutador from "./pages/DashboardReclutador";
-import PublicarVacantePage from "./pages/PublicarVacantePage";
+import EditarVacante from "./pages/EditarVacantePage";
 import DetalleVacantePage from "./pages/DetalleVacantePage";
-import ListaVacantesPage from "./pages/ListaVacantesPage";
-import PerfilCandidatoPage from "./pages/PerfilCandidatoPage";
-import EditarVacantePage from "./pages/EditarVacantePage";
 import HomePage from "./pages/HomePage";
 import Navbar from "./components/Navbar";
 import RutaProtegida from "./components/RutaProtegida";
+import DetalleMisVacantesPage from "./pages/DetalleMisVacantesPage";
+import 'react-tooltip/dist/react-tooltip.css';
+import PerfilCandidatoPage from "./pages/PerfilCandidatoPage";
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen">
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
-
-          <Route
-            path="/candidato"
-            element={
-              <RutaProtegida rolRequerido="candidato">
+          
+          {/* Ruta protegida para candidatos */}
+          <Route path="/candidato" element={
+            <RutaProtegida rolRequerido="candidato">
                 <DashboardCandidato />
-              </RutaProtegida>
-            }
-          />
+            </RutaProtegida>} />
 
-          <Route
-            path="/reclutador"
-            element={
-              <RutaProtegida rolRequerido="reclutador">
+          {/* Ruta protegida para reclutadores */}
+          <Route path="/reclutador" element={
+            <RutaProtegida rolRequerido="reclutador">
                 <DashboardReclutador />
-              </RutaProtegida>
-            }
-          />
+            </RutaProtegida>} />
 
-          <Route 
-            path="/reclutador/publicar" 
-            element={
-              <RutaProtegida rolRequerido="reclutador">
-                <PublicarVacantePage />
-              </RutaProtegida>} 
-          />
+          {/* Ruta protegida para editar vacantes */}
+          <Route path="/editar-vacante/:id" element={
+            <RutaProtegida rolRequerido="reclutador">
+                <EditarVacante />
+            </RutaProtegida>} />
 
-          <Route 
-            path="/reclutador/vacantes" 
-            element={
-              <RutaProtegida rolRequerido="reclutador">
-                <ListaVacantesPage />
-              </RutaProtegida>} 
-          />
-          
-          <Route
-            path="/reclutador/vacante/:id"
-            element={
-              <RutaProtegida rolRequerido="reclutador">
+          {/* Ruta protegida para detalle de vacante */}
+          <Route path="/detalle-vacante/:id" element={
+            <RutaProtegida rolRequerido={["candidato"]}>
                 <DetalleVacantePage />
-              </RutaProtegida>} 
-          />
-          
-          <Route
-            path="/reclutador/perfil-candidato/:id"
-            element={
+            </RutaProtegida>} />
+
+          {/* Ruta protegida para perfil candidato */}
+          <Route path="/ver-postulantes/perfil/:id" element={
               <RutaProtegida rolRequerido="reclutador">
                 <PerfilCandidatoPage />
-              </RutaProtegida>} 
-          />
-          
-          <Route path="/reclutador/editar/:id" element={
-            <RutaProtegida rolRequerido="reclutador">
-              <EditarVacantePage />
-            </RutaProtegida>
-          } />
-        </Routes>
+              </RutaProtegida>} />
 
+          {/* Ruta protegida para ver postulantes */}
+          <Route path="/ver-postulantes/:id" element={
+            <RutaProtegida rolRequerido={["reclutador"]}>
+                <DetalleMisVacantesPage />
+            </RutaProtegida>} />
+          
+        </Routes>
+        <ToastContainer position="top-right" />
       </div>
     </BrowserRouter>
   );

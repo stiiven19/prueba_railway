@@ -1,5 +1,6 @@
 # from rest_framework.permissions import IsAuthenticated    
 from rest_framework import viewsets, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from .models import Vacante
@@ -14,7 +15,7 @@ class VacanteViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['ubicacion', 'tipo_contrato']
     search_fields = ['titulo', 'descripcion', 'requisitos']
-    ordering_fields = ['fecha_publicacion']
+    ordering_fields = ['fecha_publicacion', 'titulo']
     
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
@@ -39,7 +40,7 @@ class VacanteViewSet(viewsets.ModelViewSet):
         # valida el rol (solo reclutadores pueden crear vacantes)
         user = self.request.user
         if user.rol != 'reclutador':
-            raise permissions.PermissionDenied("Solo los reclutadores pueden crear vacantes.")
+            raise PermissionDenied("Solo los reclutadores pueden crear vacantes.")
         serializer.save(reclutador=user)
     
     def create(self, request, *args, **kwargs):
