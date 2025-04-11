@@ -1,22 +1,25 @@
 from django.test import TestCase
-from empleos.models import OfertaLaboral
+from empleos.models import Vacante
+from django.contrib.auth import get_user_model
 
-class OfertaLaboralModelTest(TestCase):
+User = get_user_model()
 
-    def test_crear_oferta_valida(self):
-        oferta = OfertaLaboral.objects.create(
-            titulo="Frontend Developer",
-            descripcion="Con experiencia en React",
-            salario=4500000,
-            ubicacion="Remoto"
+class VacanteModelTest(TestCase):
+    def setUp(self):
+        self.reclutador = User.objects.create_user(
+            username='reclutador1',
+            email='reclutador1@example.com',
+            password='testpass123'
         )
-        self.assertEqual(oferta.titulo, "Frontend Developer")
 
-    def test_salario_negativo_no_valido(self):
-        with self.assertRaises(ValueError):
-            OfertaLaboral.objects.create(
-                titulo="Junior",
-                descripcion="Solo prácticas",
-                salario=-5000,
-                ubicacion="Bogotá"
-            )
+    def test_crear_vacante(self):
+        vacante = Vacante.objects.create(
+            reclutador=self.reclutador,
+            titulo='Desarrollador Backend',
+            descripcion='Desarrollo de APIs REST',
+            requisitos='Experiencia en Django',
+            ubicacion='Bogotá',
+            tipo_contrato='Tiempo completo'
+        )
+        self.assertEqual(vacante.titulo, 'Desarrollador Backend')
+        self.assertEqual(vacante.reclutador.username, 'reclutador1')
